@@ -34,6 +34,8 @@ export const spec = {
       request.push(formRequestUrl(reqParams));
     }
 
+    request.push('auctionId=' + encodeURIComponent(validBidRequests[0].bidderRequestId));
+
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
 
     request.push('stid=' + validBidRequests[0].auctionId);
