@@ -33,7 +33,6 @@ export const spec = {
       reqParams.transactionId = bid.transactionId;
       request.push(formRequestUrl(reqParams));
     }
-
     request.unshift('//' + globalParams[0][1] + '/adx/?rp=4');
 
     request.push('stid=' + validBidRequests[0].auctionId);
