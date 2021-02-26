@@ -158,19 +158,34 @@ describe('Adform adapter', function () {
     });
 
     it('should add parameter to global parameters if it exists in all bids', function () {
-      for (let i = 0; i < bids.length; i++) {
-        bids[i].params.mkv = 'key:value,key1:value1';
-        bids[i].params.repetetiveExeptOne = 'repetetiveExeptOne';
-      };
-      bids[0].params.repetetiveExeptOne = 'cvb';
-      let bidList = bids;
+      const _bids = [];
+      _bids.push(bids[0]);
+      _bids.push(bids[1]);
+      _bids.push(bids[2]);
+      _bids[0].params.mkv = 'key:value,key1:value1';
+      _bids[1].params.mkv = 'key:value,key1:value1,keyR:removed';
+      _bids[2].params.mkv = 'key:value,key1:value1,keyR:removed,key8:value1';
+      _bids[0].params.mkw = 'targeting';
+      _bids[1].params.mkw = 'targeting';
+      _bids[2].params.mkw = 'targeting,targeting2';
+      _bids[0].params.msw = 'search:word,search:word2';
+      _bids[1].params.msw = 'search:word';
+      _bids[2].params.msw = 'search:word,search:word5';
+      let bidList = _bids;
       let request = spec.buildRequests(bidList);
       let parsedUrl = parseUrl(request.url);
-      assert.equal(parsedUrl.query.mkv, encodeURIComponent('key:value,key1:value1'));
-      assert.equal(parsedUrl.items[0].repetetiveExeptOne, 'cvb');
-      for (let i = 1; i < parsedUrl.items; i++) {
-        assert.equal(parsedUrl.items[i].repetetiveExeptOne, 'repetetiveExeptOne');
-      };
+      assert.equal(parsedUrl.query.mkv, 'key:value,key1:value1');
+      assert.equal(parsedUrl.query.mkw, 'targeting');
+      assert.equal(parsedUrl.query.msw, 'search:word');
+      assert.ok(!parsedUrl.items[0].mkv);
+      assert.ok(!parsedUrl.items[0].mkw);
+      assert.equal(parsedUrl.items[0].msw, 'search:word2');
+      assert.equal(parsedUrl.items[1].mkv, 'keyR:removed');
+      assert.ok(!parsedUrl.items[1].mkw);
+      assert.ok(!parsedUrl.items[1].msw);
+      assert.equal(parsedUrl.items[2].mkv, 'keyR:removed,key8:value1');
+      assert.equal(parsedUrl.items[2].mkw, 'targeting2');
+      assert.equal(parsedUrl.items[2].msw, 'search:word5');
     });
 
     describe('user privacy', function () {
