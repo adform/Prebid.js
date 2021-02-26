@@ -157,6 +157,22 @@ describe('Adform adapter', function () {
       assert.equal(eids, 'some_id_value');
     });
 
+    it('should add parameter to global parameters if it exists in all bids', function () {
+      for (let i = 0; i < bids.length; i++) {
+        bids[i].params.mkv = 'key:value,key1:value1';
+        bids[i].params.repetetiveExeptOne = 'repetetiveExeptOne';
+      };
+      bids[0].params.repetetiveExeptOne = 'cvb';
+      let bidList = bids;
+      let request = spec.buildRequests(bidList);
+      let parsedUrl = parseUrl(request.url);
+      assert.equal(parsedUrl.query.mkv, encodeURIComponent('key:value,key1:value1'));
+      assert.equal(parsedUrl.items[0].repetetiveExeptOne, 'cvb');
+      for (let i = 1; i < parsedUrl.items; i++) {
+        assert.equal(parsedUrl.items[i].repetetiveExeptOne, 'repetetiveExeptOne');
+      };
+    });
+
     describe('user privacy', function () {
       it('should send GDPR Consent data to adform if gdprApplies', function () {
         let request = spec.buildRequests([bids[0]], {gdprConsent: {gdprApplies: true, consentString: 'concentDataString'}});

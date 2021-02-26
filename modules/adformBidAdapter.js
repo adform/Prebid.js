@@ -26,11 +26,31 @@ export const spec = {
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ], [ 'eids', eids ] ];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     var bidder = (bids[0] && bids[0].bidder) || BIDDER_CODE;
+    var notGlobalParams = ['mid', 'priceType', 'pt', 'rcur'];
+    var allParams = {};
+
+    if (bids.length > 1) {
+      allParams = {...bids[0].params};
+      for (i = 1, l = bids.length; i < l; i++) {
+        bid = bids[i];
+        for (var key in allParams) {
+          if (!bid.params[key] || bid.params[key] !== allParams[key] || notGlobalParams.indexOf(key) >= 0) {
+            delete allParams[key];
+          }
+        }
+      }
+    }
+
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if ((bid.params.priceType === 'net') || (bid.params.pt === 'net')) {
         netRevenue = 'net';
       }
+
+      for (let key in allParams) {
+        delete bid.params[key];
+      };
+
       for (j = 0, k = globalParams.length; j < k; j++) {
         _key = globalParams[j][0];
         _value = bid[_key] || bid.params[_key];
@@ -63,6 +83,10 @@ export const spec = {
 
     if (bidderRequest && bidderRequest.uspConsent) {
       request.push('us_privacy=' + bidderRequest.uspConsent);
+    }
+
+    for (let key in allParams) {
+      globalParams.push([key, allParams[key]]);
     }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
