@@ -74,7 +74,7 @@ export const spec = {
 
     for (let key in globalTargetingParams) {
       request.push(key + '=' + globalTargetingParams[key]);
-    };
+    }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
       _key = globalParams[i][0];
@@ -138,8 +138,8 @@ export const spec = {
               targetingParams[key][item] = targetingParams[key][item] ? targetingParams[key][item] + 1 : 1;
               if (targetingParams[key][item] === l) {
                 (globalTargeting[key] = globalTargeting[key] ? globalTargeting[key] : globalTargeting[key] = []).push(item);
-              };
-            })
+              }
+            });
           }
         }
       }
@@ -151,9 +151,10 @@ export const spec = {
             let params = bid.params[key].split(',');
             params = params.filter(item => !globalTargeting[key].includes(item));
             bid.params[key] = params.join(',');
-          }  
+          }
         }
-      };
+      }
+
       for (let key in globalTargeting) {
         globalTargeting[key] = globalTargeting[key].join(',');
       }
