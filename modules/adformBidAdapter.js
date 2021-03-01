@@ -26,33 +26,16 @@ export const spec = {
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ], [ 'eids', eids ] ];
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     var bidder = (bids[0] && bids[0].bidder) || BIDDER_CODE;
-    var allParams = { mkv: {}, mkw: {}, msw: {} };
+    var globalTargetingParams = {};
 
     if (bids.length > 1) {
-      for (i = 0, l = bids.length; i < l; i++) {
-        for (let key in allParams) {
-          if (bids[i].params[key]) {
-            let params = bids[i].params[key].split(',');
-            params.map(item => {
-              allParams[key][item] = allParams[key][item] ? allParams[key][item] + 1 : 1;
-            })
-          }
-        }
-      }
+      globalTargetingParams = handleTargetingParameters(bids);
     }
 
     for (i = 0, l = bids.length; i < l; i++) {
       bid = bids[i];
       if ((bid.params.priceType === 'net') || (bid.params.pt === 'net')) {
         netRevenue = 'net';
-      }
-
-      for (let key in allParams) {
-        if (bid.params[key]) {
-          let params = bid.params[key].split(',');
-          params = params.filter(item => allParams[key][item] < l);
-          bid.params[key] = params.join(',');
-        }
       }
 
       for (j = 0, k = globalParams.length; j < k; j++) {
@@ -89,16 +72,8 @@ export const spec = {
       request.push('us_privacy=' + bidderRequest.uspConsent);
     }
 
-    for (let key in allParams) {
-      let paramQuery = [];
-      for (let param in allParams[key]) {
-        if (allParams[key][param] === bids.length) {
-          paramQuery.push(param);
-        }
-      }
-      if (paramQuery.length > 0) {
-        request.push(key + '=' + paramQuery.join(','));
-      }
+    for (let key in globalTargetingParams) {
+      request.push(key + '=' + globalTargetingParams[key]);
     };
 
     for (i = 1, l = globalParams.length; i < l; i++) {
@@ -149,6 +124,41 @@ export const spec = {
 
         return result;
       }, {});
+    }
+
+    function handleTargetingParameters(bids) {
+      let targetingParams = { mkv: {}, mkw: {}, msw: {} };
+      let globalTargeting = {};
+      let result = {};
+
+      for (i = 0, l = bids.length; i < l; i++) {
+        for (let key in targetingParams) {
+          if (bids[i].params[key]) {
+            let params = bids[i].params[key].split(',');
+            params.forEach(item => {
+              targetingParams[key][item] = targetingParams[key][item] ? targetingParams[key][item] + 1 : 1;
+              if (targetingParams[key][item] === l) {
+                (globalTargeting[key] = globalTargeting[key] ? globalTargeting[key] : globalTargeting[key] = []).push(item);
+              };
+            })
+          }
+        }
+      }
+
+      if (Object.keys(globalTargeting).length > 0) {
+        for (i = 0, l = bids.length; i < l; i++) {
+          let bid = bids[i];
+          for (let key in globalTargeting) {
+            let params = bid.params[key].split(',');
+            params = params.filter(item => !globalTargeting[key].includes(item));
+            bid.params[key] = params.join(',');
+          }  
+        }
+      };
+      for (let key in globalTargeting) {
+        globalTargeting[key] = globalTargeting[key].join(',');
+      }
+      return globalTargeting;
     }
   },
   interpretResponse: function (serverResponse, bidRequest) {
