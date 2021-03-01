@@ -174,9 +174,9 @@ describe('Adform adapter', function () {
       let bidList = _bids;
       let request = spec.buildRequests(bidList);
       let parsedUrl = parseUrl(request.url);
-      assert.equal(parsedUrl.query.mkv, 'key:value,key1:value1');
+      assert.equal(parsedUrl.query.mkv, encodeURIComponent('key:value,key1:value1'));
       assert.equal(parsedUrl.query.mkw, 'targeting');
-      assert.equal(parsedUrl.query.msw, 'search:word');
+      assert.equal(parsedUrl.query.msw, encodeURIComponent('search:word'));
       assert.ok(!parsedUrl.items[0].mkv);
       assert.ok(!parsedUrl.items[0].mkw);
       assert.equal(parsedUrl.items[0].msw, 'search:word2');

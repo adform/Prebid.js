@@ -5,6 +5,7 @@ import { config } from '../src/config.js';
 import { BANNER, VIDEO } from '../src/mediaTypes.js';
 import { Renderer } from '../src/Renderer.js';
 import * as utils from '../src/utils.js';
+import includes from 'core-js-pure/features/array/includes.js';
 
 const OUTSTREAM_RENDERER_URL = 'https://s2.adform.net/banners/scripts/video/outstream/render.js';
 
@@ -24,12 +25,24 @@ export const spec = {
 
     var request = [];
     var globalParams = [ [ 'adxDomain', 'adx.adform.net' ], [ 'fd', 1 ], [ 'url', null ], [ 'tid', null ], [ 'eids', eids ] ];
+    const targetingParams = { mkv: [], mkw: [], msw: [] };
+
     var bids = JSON.parse(JSON.stringify(validBidRequests));
     var bidder = (bids[0] && bids[0].bidder) || BIDDER_CODE;
-    var globalTargetingParams = {};
 
+    // set common targeting options as query params
     if (bids.length > 1) {
-      globalTargetingParams = handleTargetingParameters(bids);
+      for (let key in targetingParams) {
+        if (targetingParams.hasOwnProperty(key)) {
+          const collection = bids.map(bid => ((bid.params[key] && bid.params[key].split(',')) || []));
+          targetingParams[key] = collection.reduce(intersects);
+          if (targetingParams[key].length) {
+            bids.forEach((bid, index) => {
+              bid.params[key] = collection[index].filter(item => !includes(targetingParams[key], item));
+            });
+          }
+        }
+      }
     }
 
     for (i = 0, l = bids.length; i < l; i++) {
@@ -72,8 +85,10 @@ export const spec = {
       request.push('us_privacy=' + bidderRequest.uspConsent);
     }
 
-    for (let key in globalTargetingParams) {
-      request.push(key + '=' + globalTargetingParams[key]);
+    for (let key in targetingParams) {
+      if (targetingParams.hasOwnProperty(key)) {
+        globalParams.push([ key, targetingParams[key].join(',') ]);
+      }
     }
 
     for (i = 1, l = globalParams.length; i < l; i++) {
@@ -126,39 +141,8 @@ export const spec = {
       }, {});
     }
 
-    function handleTargetingParameters(bids) {
-      let targetingParams = { mkv: {}, mkw: {}, msw: {} };
-      let globalTargeting = {};
-
-      for (i = 0, l = bids.length; i < l; i++) {
-        for (let key in targetingParams) {
-          if (bids[i].params[key]) {
-            let params = bids[i].params[key].split(',');
-            params.forEach(item => {
-              targetingParams[key][item] = targetingParams[key][item] ? targetingParams[key][item] + 1 : 1;
-              if (targetingParams[key][item] === l) {
-                (globalTargeting[key] = globalTargeting[key] ? globalTargeting[key] : globalTargeting[key] = []).push(item);
-              }
-            });
-          }
-        }
-      }
-
-      if (Object.keys(globalTargeting).length > 0) {
-        for (i = 0, l = bids.length; i < l; i++) {
-          let bid = bids[i];
-          for (let key in globalTargeting) {
-            let params = bid.params[key].split(',');
-            params = params.filter(item => !globalTargeting[key].includes(item));
-            bid.params[key] = params.join(',');
-          }
-        }
-      }
-
-      for (let key in globalTargeting) {
-        globalTargeting[key] = globalTargeting[key].join(',');
-      }
-      return globalTargeting;
+    function intersects(col1, col2) {
+      return col1.filter(item => includes(col2, item));
     }
   },
   interpretResponse: function (serverResponse, bidRequest) {
