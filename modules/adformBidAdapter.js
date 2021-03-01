@@ -129,7 +129,6 @@ export const spec = {
     function handleTargetingParameters(bids) {
       let targetingParams = { mkv: {}, mkw: {}, msw: {} };
       let globalTargeting = {};
-      let result = {};
 
       for (i = 0, l = bids.length; i < l; i++) {
         for (let key in targetingParams) {
